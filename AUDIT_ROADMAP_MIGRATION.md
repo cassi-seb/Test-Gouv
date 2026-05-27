@@ -1,789 +1,713 @@
-# 📋 AUDIT & ROADMAP MIGRATION VERS APPS
+# 📋 AUDIT & ROADMAP MIGRATION APPS POWER BI
 
-**Contexte** : 15 workspaces, 20 rapports, populations hiérarchiques, RLS déjà en place  
-**Timeline** : 5-6 semaines (1.5 mois), 26-44 jours effort  
-**Objectif** : UX/Ergonomie → users ne voient que ce qui les concerne
-
----
-
-## RÉSUMÉ EXÉCUTIF
-
-```
-✅ RLS déjà en place → pas d'implémentation RLS
-✅ 15 workspaces (léger) → migration rapide
-✅ 20 rapports (simple) → pas de complexité volume
-✅ Effort raisonnable : 26-44 jours (6 semaines)
-✅ Risque faible : RLS sécurise déjà les données
-
-RECOMMANDATION : GO pour la migration 🚀
-```
+**Contexte** : 15 workspaces, 20 rapports, RLS déjà en place, objectif UX  
+**Timeline** : 6-8 semaines (1.5 mois)  
+**Effort** : 26-44 jours = 3-5.5 ETP semaines
 
 ---
 
-# PHASE 0 : AUDIT BASELINE (Semaine 1)
-
-**Durée** : 4-6 jours  
-**Objectif** : État actuel des droits + décider architecture apps  
-**Livrables** : Baseline document + architecture decision
-
----
-
-## TÂCHE 0.1 : Audit Dérives Actuelles
-
-**Durée** : 2-3 jours  
-**Comment** : Manuel (fichier Excel + vérif AD)  
-**À faire** :
-
-```
-✅ DÉRIVES À IDENTIFIER :
-
-   1. Users INDIVIDUELS en workspace (pas groupe AD)
-      └─ Risque : pas de maintenance RH, accès orpheline
-      └─ Question : Combien ? (chercher dans Excel, colonne "Access Type")
-      └─ Action : Lister tous les users individuels
-
-   2. ADMINS non-équipe data
-      └─ Risque : droits excessifs, modifications non-contrôlées
-      └─ Question : Y en a combien ? Qui sont-ils ?
-      └─ Action : Lister tous les admins non-équipe-data
-
-   3. Populations INACTIVES en RH mais encore en PBI
-      └─ Risque : RGPD (données accessibles sans justif)
-      └─ Question : Des pops supprimées en RH mais toujours en workspace ?
-      └─ Action : Croiser population actives (RH) vs population en PBI
-
-   4. RLS INCOHÉRENTE
-      └─ Risque : user voit données cross-métier
-      └─ Question : RLS dimension ≠ hiérarchie populations ?
-      └─ Action : Vérifier RLS roles alignés avec populations
-```
-
-**Output** :
-```
-Rapport Dérives :
-├─ Users individuels : X trouvés
-├─ Admins non-autorisés : Y trouvés
-├─ Populations inactives : Z trouvés
-├─ RLS incohérences : N trouvés
-└─ Action plan : nettoyage avant migration (priorité ?)
-```
+## PHASE 0 : AUDIT BASELINE (Semaine 1)
+**Objectif** : État actuel complet + décision architecture  
+**Effort** : 4-6 jours  
+**Outputs** : Audit report + architecture decision
 
 ---
 
-## TÂCHE 0.2 : Vérifier RLS Coverage
-
-**Durée** : 1 jour  
-**Comment** : Manual (fichier Excel RLS)  
-**À faire** :
-
-```
-✅ RLS VALIDATION :
-
-   1. Quels datasets ont RLS ? (%)  
-      └─ Question : sur 15-25 datasets, combien avec RLS ?
-      └─ Réponse attendue : "80%", "100%", "50%" ?
-
-   2. RLS dimension : cohérente avec populations ?
-      └─ Exemple : RLS = "France", "Germany" vs populations = "France/Finance", "France/Commercial"
-      └─ Question : Mapping correct ?
-
-   3. Datasets SANS RLS mais sensibles ? (budget, perso, etc.)
-      └─ Question : Besoin de rajouter RLS après audit ?
-      └─ Réponse : "Non" (tu as dit déjà en place)
-```
-
-**Output** :
-```
-RLS Coverage Report :
-├─ % datasets avec RLS : X%
-├─ RLS dimensions principales : [liste]
-├─ Datasets sans RLS : [liste + risque]
-└─ Conclusion : "RLS OK pour migration" ✅
-```
+## PHASE 1 : DESIGN (Semaine 2)
+**Objectif** : Architecture apps + audiences + gouvernance  
+**Effort** : 6-11 jours  
+**Outputs** : Design doc + RLS validation + policy
 
 ---
 
-## TÂCHE 0.3 : Décider Architecture Apps
-
-**Durée** : 2-3 jours  
-**Comment** : Réunion + analyse  
-**À faire** :
-
-```
-✅ 3 OPTIONS :
-
-   OPTION A : 1 app = 1 workspace (1:1)
-   ├─ Résultat : 15 apps
-   ├─ Avantage : Zéro réorganisation
-   ├─ Inconvénient : Pas d'amélioration UX (15 apps = toujours confus)
-   └─ Recommandation : ❌ NON (défait le but)
-
-   OPTION B : 1 app = 1 métier (fusion)
-   ├─ Exemple : 3 "Finance workspaces" → 1 app "Finance Reporting"
-   ├─ Résultat : 5-8 apps
-   ├─ Avantage : Navigation ultra-claire, UX excellent
-   ├─ Inconvénient : Consolider datasets + reconnect (effort +5-10j)
-   └─ Recommandation : ✅ OUI (meilleur UX)
-
-   OPTION C : Hybrid
-   ├─ Certains métiers = 1 app, autres gardent structure
-   ├─ Exemple : Finance fusionne, Commercial reste 1:1
-   ├─ Résultat : 8-12 apps
-   ├─ Avantage : Compromis
-   ├─ Inconvénient : Complexité, inconsistant
-   └─ Recommandation : 🟠 PEUT-ÊTRE (dépend contraintes)
-```
-
-**Process de décision** :
-```
-1. Lister les 15 workspaces actuels avec leur métier
-   └─ Ex: WS_Finance_1, WS_Finance_2, WS_Commercial, WS_HR, etc.
-
-2. Grouper par métier
-   └─ Finance : WS_Finance_1, WS_Finance_2 (2 WS)
-   └─ Commercial : WS_Commercial, WS_Sales (2 WS)
-   └─ HR : WS_HR (1 WS)
-   └─ Etc.
-
-3. Décider : fusionner ou pas ?
-   ├─ Si datasets Finance sont indépendants → fusionner en 1 app
-   ├─ Si datasets Commercial partagent même audience → fusionner en 1 app
-   └─ Si workspace isolé → rester 1:1
-
-4. Valider impact RLS
-   └─ Fusion Finance WS1+WS2 → même RLS role ?
-   └─ Si oui → fusionner ✅
-   └─ Si non → risque RLS cassée ❌
-```
-
-**Output** :
-```
-Architecture Decision :
-├─ Option choisie : [A/B/C]
-├─ Apps finales : X apps
-├─ Mapping workspace → app :
-│  ├─ App "Finance" ← WS_Finance_1, WS_Finance_2
-│  ├─ App "Commercial" ← WS_Commercial, WS_Sales
-│  └─ ...
-├─ Rationale : [pourquoi]
-└─ Sign-off : [qui valide]
-```
+## PHASE 2 : IMPLÉMENTATION (Semaine 3-4)
+**Objectif** : Créer apps, tester, pilot  
+**Effort** : 9-17 jours  
+**Outputs** : Apps ready, pilot feedback
 
 ---
 
-## TÂCHE 0.4 : Nettoyage Préalable (si dérives trouvées)
+## PHASE 3 : GO-LIVE (Semaine 5)
+**Objectif** : Formation + migration + décommissionner  
+**Effort** : 7-10 jours  
+**Outputs** : Migration complète
 
-**Durée** : 1-2 jours (si peu de dérives)  
-**À faire** :
+---
+
+# 📊 PHASE 0 : AUDIT BASELINE (SEMAINE 1)
+
+## 0.1 EXTRACTION API PBI
+
+### Tâche : Récupérer état actuel complet
+
+```sql
+-- TABLE 1 : WORKSPACES (15)
+SELECT
+  workspace_id,
+  workspace_name,
+  workspace_type,  -- "métier" vs "équipe"
+  owner,
+  created_date,
+  capacity_type,   -- Premium ou Shared
+  is_active
+FROM workspaces;
+
+-- TABLE 2 : DATASETS (15-25 estimé)
+SELECT
+  dataset_id,
+  dataset_name,
+  workspace_id,
+  owner,
+  is_refreshing,
+  rls_enabled,     -- OUI/NON (tu dis que OUI sur sensibles)
+  rls_dimension,   -- "Métier" ou "Fonction" ou autre
+  created_date
+FROM datasets;
+
+-- TABLE 3 : REPORTS (20)
+SELECT
+  report_id,
+  report_name,
+  workspace_id,
+  dataset_id,
+  owner,
+  created_date
+FROM reports;
+
+-- TABLE 4 : WORKSPACE ACCESS (droits actuels)
+SELECT
+  workspace_id,
+  principal_id,      -- User email ou Group AD DN
+  principal_type,    -- "User" ou "Group"
+  access_right,      -- Admin, Member, Contributor, Viewer
+  added_date,
+  is_individual_user -- Flag pour identifier dérives
+FROM workspace_access;
+
+-- TABLE 5 : RLS ROLES
+SELECT
+  dataset_id,
+  role_name,
+  dimension_value,   -- Ex: "France", "Finance", "Manager"
+  members            -- Populations assignées
+FROM rls_roles;
+```
+
+**Effort** : 1-2 jours (extraction + nettoyage)
+
+---
+
+## 0.2 AUDIT DÉRIVES & ÉTAT ACTUEL
+
+### Contrôle 1 : Users individuels (shadow IT)
+
+```sql
+SELECT
+  workspace_id,
+  workspace_name,
+  principal_id,
+  principal_type,
+  access_right,
+  'INDIVIDUAL USER' as finding
+FROM workspace_access
+WHERE principal_type = 'User'    -- Pas un groupe AD
+ORDER BY workspace_id;
+
+-- Résultat attendu : ~0 (si tu dis que c'est clean)
+```
+
+**Question** : Combien de users individuels actuellement ? (0 ou plusieurs ?)
+
+### Contrôle 2 : Admins autorisés
+
+```sql
+SELECT
+  workspace_id,
+  workspace_name,
+  principal_id,
+  access_right,
+  CASE WHEN principal_id NOT IN ('équipe-data@company', 'pbi-admins@company')
+       THEN 'UNAUTHORIZED ADMIN'
+       ELSE 'OK'
+  END as status
+FROM workspace_access
+WHERE access_right = 'Admin';
+```
+
+**Question** : Admins non-équipe data ? (oui/non ?)
+
+### Contrôle 3 : RLS coverage
+
+```sql
+SELECT
+  COUNT(*) as total_datasets,
+  SUM(CASE WHEN rls_enabled = 1 THEN 1 ELSE 0 END) as with_rls,
+  SUM(CASE WHEN rls_enabled = 0 THEN 1 ELSE 0 END) as without_rls,
+  ROUND(100.0 * SUM(CASE WHEN rls_enabled = 1 THEN 1 ELSE 0 END) / COUNT(*), 1) as rls_percentage
+FROM datasets;
+
+-- Résultat attendu : 100% RLS sur sensibles (tu dis déjà en place)
+```
+
+**Résultat attendu** : "RLS déjà sur les sensibles ✅"
+
+### Contrôle 4 : Mapping actuel
 
 ```
-✅ NETTOYAGE :
-
-   1. Users individuels → ajouter au groupe AD
-      └─ "User Jean" dans workspace → ajouter à groupe "finance@company.com"
-      └─ Retirer accès individuel
-
-   2. Admins non-autorisés → retirer ou limiter
-      └─ Exemple : User non-équipe-data en Admin → passer en Member
-
-   3. Populations inactives → retirer du workspace
-      └─ Exemple : Pop supprimée en RH → retirer du workspace PBI
-
-   4. RLS cassée → corriger (si trouvée)
-      └─ Exemple : User voit données cross-métier → valider RLS role
+Table simple :
+Workspace | Dataset | Reports | RLS? | Populations | Notes
+────────────────────────────────────────────────────────────────
+Finance  | Budget  | R1, R2  | OUI  | france@, finance@ | OK
+Commercial| Sales | R3, R4  | OUI  | commercial@      | OK
+RH       | HR Data | R5      | OUI  | rh@              | OK
+...
 ```
 
-**Validation post-nettoyage** :
+**Effort** : 1-2 jours (créer mapping)
+
+---
+
+## 0.3 SYNTHÈSE AUDIT
+
+### Checklist validation
+
 ```
-Vérifier :
-✅ Tous les users = groupes AD (pas individuels)
-✅ Admins = uniquement équipe data
-✅ Populations actives en RH = actives en PBI
-✅ RLS fonctionne (test user A voit A data, pas B data)
+✅ 15 workspaces identifiés
+   └─ Par métier/équipe ? Distribution OK ?
+
+✅ 20 rapports localisés
+   └─ Distribution par workspace ? Avg = 1-3 rapports/WS ?
+
+✅ Datasets complets
+   └─ Total : ___ datasets
+   └─ RLS coverage : __% (tu dis ~100% sur sensibles)
+
+✅ Droits actuels
+   └─ Users individuels : ___ (tu dis ~0)
+   └─ Admins non-autorisés : ___ (tu dis ~0)
+
+✅ RLS validée
+   └─ RLS dimension : par métier ? par fonction ? mixte ?
+   └─ Efficacité : test data leakage = ✅ OK
+
+✅ Populations hiérarchie
+   └─ Mères : ___ (France, Commercial, etc.)
+   └─ Filles : ___ (Finance, Équipe, etc.)
+   └─ Mapping complexité : Simple / Moyen / Complex ?
 ```
 
 ---
 
-# PHASE 1 : DESIGN (Semaine 2)
+## 0.4 DÉCISION ARCHITECTURE
 
-**Durée** : 6-11 jours  
-**Objectif** : Design détaillé + gouvernance  
-**Livrables** : Design doc + audiences mapping + policy
+### Option A : 1:1 Mapping (Workspace = App)
+
+```
+15 workspaces → 15 apps
+
+Avantages :
+├─ Zéro changement structure
+├─ Migration rapide (copy-paste)
+└─ Risque minimaliste
+
+Inconvénients :
+├─ UX pas amélioré (toujours 15 apps = confus)
+├─ Gouvernance lourd (15 app owners)
+└─ Dénigre l'objectif UX
+
+Recommandation : ❌ PAS bon
+```
+
+### Option B : Fusion par Métier (RECOMMANDÉ)
+
+```
+15 workspaces → 5-8 apps (par métier/fonction)
+
+Exemple :
+├─ App "Finance Reporting" = Finance WS + Finance-Tools WS + datasets
+├─ App "Commercial" = Sales WS + Accounts WS
+├─ App "RH & Ops" = HR WS + Operations WS
+└─ etc.
+
+Avantages :
+├─ UX simplifié (5-8 apps claires vs 15 workspaces)
+├─ Users voient "Finance" = intuitif
+├─ Audiences alignées avec populations
+└─ Gouvernance léger (5-8 app owners)
+
+Inconvénients :
+├─ Réorganisation workspaces (consolidation)
+├─ Mappings complexe si hiérarchie pop compliquée
+└─ Effort +5 jours
+
+Recommendation : ✅ MEILLEUR choix
+```
+
+### Option C : Hybrid
+
+```
+Mélange A + B (certains métiers 1:1, autres fusionnés)
+
+Use case : Si une équipe a besoin workspaces séparées (dev/prod)
+
+Recommandation : ⚠️ À considérer après discussion
+```
+
+### DÉCISION À PRENDRE
+
+```
+🎯 QUESTION : Quel modèle choisis-tu ?
+
+ A) 1:1 (15 workspaces → 15 apps)
+ B) Fusion par métier (15 workspaces → 5-8 apps) ← RECOMMANDÉ
+ C) Hybrid (à définir)
+
+📝 Réponse : ________________
+```
+
+**Effort** : 1 jour (réunion + décision)
 
 ---
 
-## TÂCHE 1.1 : Mapper Workspaces → App Audiences
+## 📊 OUTPUT PHASE 0
 
-**Durée** : 3-5 jours  
-**À faire** :
-
-```
-✅ POUR CHAQUE APP :
-
-   1. Définir l'audience (groupes AD)
-      └─ Exemple App "Finance" :
-         ├─ Audience principale : "finance@company.com"
-         ├─ Audience secondaire : "france@company.com" (si région applicable)
-         ├─ Audience admin : "equipe-data@company.com"
-         └─ Valider : chaque groupe a accès au bon app
-
-   2. Valider alignement hiérarchie populations
-      └─ Population "France/Finance" → visible en app "Finance" ? ✅
-      └─ Population "Commercial/France" → PAS visible en app "Finance" ? ✅
-      └─ Pas de cross-leakage ?
-
-   3. Tester audiences manuellement
-      └─ Créer user test dans chaque groupe
-      └─ Vérifier : "Voit-il juste son app ?"
-```
-
-**Output** :
-```
-Audiences Mapping :
-├─ App "Finance" audiences = {finance@company.com, equipe-data@company.com}
-├─ App "Commercial" audiences = {commercial@company.com, equipe-data@company.com}
-├─ App "HR" audiences = {hr@company.com, equipe-data@company.com}
-└─ ... (pour chaque app)
-
-Validation :
-✅ Chaque population → bonne app
-✅ Pas de cross-access
-✅ Admins accessibles partout
-```
-
----
-
-## TÂCHE 1.2 : RLS Validation (Quick Check)
-
-**Durée** : 1-2 jours  
-**À faire** :
+### Audit Report (template)
 
 ```
-✅ VALIDER RLS ACTUELLE :
+RAPPORT AUDIT BASELINE - [DATE]
+════════════════════════════════════════════
 
-   1. RLS = conservée lors migration ?
-      └─ Question : Datasets avec RLS restent avec RLS ?
-      └─ Réponse : OUI ✅ (pas toucher à RLS)
+1. ÉTAT ACTUEL
+   ├─ Workspaces : 15
+   │  ├─ Métier : __ 
+   │  └─ Équipe/Fonction : __
+   ├─ Datasets : __ (RLS coverage : __% ✅)
+   ├─ Reports : 20
+   └─ Populations hiérarchie : __ mères + __ filles
 
-   2. RLS roles = alignées avec app audiences ?
-      └─ Exemple : RLS "France" + audience "france@company.com" = match ?
-      └─ Si non → ajouter mapping note
+2. DÉRIVES IDENTIFIÉES
+   ├─ Users individuels : __ (expected : 0)
+   ├─ Admins non-autorisés : __ (expected : 0)
+   └─ RLS gaps : NONE ✅ (tu dis déjà en place)
 
-   3. Test data leakage (sample)
-      └─ Créer user test "France/Finance"
-      └─ Vérifier : voit-il JUSTE France+Finance data ?
-      └─ Test 2-3 users représentatifs
-```
+3. ARCHITECTURE DÉCIDÉE
+   ├─ Modèle choisi : [A/B/C]
+   ├─ Apps résultantes : __ apps
+   └─ Justification : [UX, effort, governance]
 
-**Output** :
-```
-RLS Validation Report :
-├─ RLS Status : "OK, conservée, pas de changement"
-├─ RLS-App alignment : [mapping]
-├─ Data leakage test : "PASS" ✅
-└─ Recommendation : "RLS ready for migration"
-```
+4. COMPLEXITÉ
+   ├─ Hiérarchie populations : Simple/Moyen/Complex
+   ├─ Mapping difficulty : Low/Medium/High
+   └─ Ressources nécessaires : [évaluation]
 
----
-
-## TÂCHE 1.3 : Gouvernance Policy
-
-**Durée** : 1-2 jours  
-**À faire** :
-
-```
-✅ DÉFINIR PROCESS :
-
-   1. App Owner : Qui ?
-      └─ Équipe data uniquement ?
-      └─ Ou équipe data + métier designé ?
-      └─ Décision : ______
-
-   2. Publication : Approval nécessaire ?
-      └─ Équipe data approuve tout ?
-      └─ Auto-publish sans approval ?
-      └─ Décision : ______
-
-   3. Ajouter population en app : qui demande ?
-      └─ Demandeur : User ? Métier ? DSI ?
-      └─ Approbateur : Équipe data ? Métier ?
-      └─ Process : email ? ticket IT ? form ?
-      └─ Décision : ______
-
-   4. Checklist publication app
-      └─ ✅ Audience = groupes AD uniquement (pas users individuels)
-      └─ ✅ RLS appliquée correctement (si applicable)
-      └─ ✅ Sensitivity labels (si besoin)
-      └─ ✅ Release notes documentées
-      └─ ✅ Équipe data review + sign-off
-```
-
-**Output** :
-```
-Governance Policy v1 :
-├─ App Owners : [liste]
-├─ Publication Process : [steps]
-├─ Access Request Process : [steps]
-├─ Checklist : [items]
-└─ Sign-off : [date, who]
+5. SIGN-OFF
+   ├─ Équipe data : ✅
+   ├─ Steering committee : ✅
+   └─ Go for Phase 1 : ✅ OUI
 ```
 
 ---
 
-## TÂCHE 1.4 : Communication Plan
+# 🎯 PHASE 1 : DESIGN (SEMAINE 2)
 
-**Durée** : 1 jour  
-**À faire** :
+**Objectif** : Définir architecture complète, audiences, gouvernance  
+**Effort** : 6-11 jours
+
+---
+
+## 1.1 MAPPING WORKSPACE → APP AUDIENCES
+
+### Tâche 1 : Créer matrice mapping
 
 ```
-✅ COMMUNIQUER CHANGEMENT :
+Workspace Name | Type | → APP Name | Audience Groups | Datasets | Reports | Notes
+───────────────────────────────────────────────────────────────────────────────────────
+Finance WS     | Métier | Finance  | finance@company | Budget, | R1, R2  | Fusion
+Finance-Tools  | Équipe |          | france@company  | Actuals | R3      | avec
+France-Finance |        |          |                 |         |         | Finance
+───────────────────────────────────────────────────────────────────────────────────────
+Sales WS       | Métier | Commercial| commercial@    | Sales,  | R4, R5  | Fusion
+Accounts WS    |        |          | region@company | Revenue | R6      | ok
+───────────────────────────────────────────────────────────────────────────────────────
+...
+```
 
-   Semaine 2 (NOW) :
-   └─ Email : "Change coming : Workspace → Apps migration"
-      ├─ Pourquoi : "Meilleure navigation, UX simplifiée"
-      ├─ Quand : "Go-live Semaine 5"
-      ├─ Impact : "Workspaces disparaissent, apps arrivent"
-      └─ FAQ : "Vais-je perdre mes données ?" → Non, RLS conservée ✅
+**Effort** : 3-5 jours (+ validation métier)
 
-   Semaine 4 :
-   └─ Video : "Comment utiliser les apps" (30 min)
-      ├─ Où voir les apps ?
-      ├─ Comment chercher mes rapports ?
-      ├─ Que se passe-t-il avec mes bookmarks ?
-      └─ Support : qui appeler ?
+### Tâche 2 : Aligner populations hiérarchiques
 
-   Semaine 5 :
-   └─ Go-live announcement
-      ├─ "Apps live, workspaces archived"
-      ├─ "Migration réussie ✅"
-      └─ "Support disponible pendant 2 semaines"
+```
+APP "Finance Reporting"
+├─ Audience group = "finance@company.com" (groupe mère)
+│  ├─ Members (via AD) : France Finance team, Germany Finance team, etc.
+│  └─ Tous les members voient app "Finance"
+├─ RLS role = "Finance" (dans dataset Budget)
+│  ├─ RLS members : France/Finance sub-pop
+│  └─ Voit uniquement ses données (France)
+└─ Résultat : Double layer ✅
+   ├─ Layer 1 (Audience) : "Es-tu dans finance @ ?"
+   └─ Layer 2 (RLS) : "Vois-tu juste ta région ?"
+
+APP "Commercial"
+├─ Audience = "commercial@company.com"
+│  └─ Members : toutes équipes commercial
+├─ RLS = "Commercial" dimension (par région, par client, etc.)
+└─ Résultat : Chaque user Commercial voit juste ses données ✅
+```
+
+**Effort** : 2-3 jours (validation avec métier)
+
+### Output : Mapping Document
+
+```
+TABLE : WORKSPACE TO APP MAPPING
+
+Workspace_ID | Workspace_Name | App_Name | Audience_Group_DN | Datasets | RLS_Status | Owner
+─────────────────────────────────────────────────────────────────────────────────────────────
+WS001        | Finance        | Finance  | finance@company   | DS001,   | ✅ RLS    | équipe-data
+             |                | Report   | france@company    | DS002    | validated |
+WS002        | Finance-Tools  | ↑        | ↑                 | ↑        | ↑         |
+WS003        | France-FIN     | ↑        | ↑                 | ↑        | ↑         |
+─────────────────────────────────────────────────────────────────────────────────────────────
+WS004        | Sales          | Commercial| commercial@      | DS003,   | ✅ RLS    | équipe-data
+             |                | Dashboards| region@company   | DS004    | validated |
+WS005        | Accounts       | ↑        | ↑                 | ↑        | ↑         |
+─────────────────────────────────────────────────────────────────────────────────────────────
+...
 ```
 
 ---
 
-# PHASE 2 : IMPLÉMENTATION (Semaine 3-4)
+## 1.2 RLS VALIDATION RAPIDE
 
-**Durée** : 9-17 jours  
-**Objectif** : Créer apps + configurer + tester  
-**Livrables** : Apps en prod + test results
+### Tâche : Vérifier RLS fonctionne post-migration
+
+```
+Pour chaque dataset avec RLS :
+
+✅ Checklist :
+  ├─ RLS role dimension clary ?
+  ├─ RLS members = populations existantes ?
+  ├─ Pas de gap (pop sans RLS role) ?
+  ├─ RLS appliquée à tous rapports utilisant dataset ?
+  └─ Documentation de RLS dimension ?
+
+Test rapide :
+  ├─ Login as User A (France/Finance)
+  ├─ Voit France data seulement ? ✅
+  ├─ Login as User B (Commercial/Region)
+  └─ Voit Region data seulement ? ✅
+```
+
+**Effort** : 1-2 jours (c'est juste validation, pas implémentation)
 
 ---
 
-## TÂCHE 2.1 : Créer Apps & Configurer Audiences
+## 1.3 GOUVERNANCE POLICY
 
-**Durée** : 4-6 jours  
-**À faire** :
+### Tâche : Définir process
 
 ```
-✅ POUR CHAQUE APP (5-8 apps) :
+GOVERNANCE POLICY
+════════════════════════════════════════════
 
-   1. Créer app dans Power BI
-      └─ Nom : sémantique métier ("Finance Reporting")
-      └─ Workspace : créer ou utiliser existant ?
-      └─ Owner : équipe data
+1. APP OWNERS
+   ├─ Qui : Équipe data + (optionnel) champion métier
+   ├─ Responsabilité :
+   │  ├─ Publier app updates
+   │  ├─ Gérer audience groups (add/remove populations)
+   │  └─ Support users
+   └─ Training : 2h workshop avant go-live
 
-   2. Ajouter rapports
-      └─ Copier/link rapports depuis ancien workspace
-      └─ Tester : rapports affichent-ils ?
+2. PUBLICATION PROCESS
+   ├─ Checklist avant publication :
+   │  ├─ ✅ Audience = groupes AD uniquement (no individuals)
+   │  ├─ ✅ RLS appliquée et testée
+   │  ├─ ✅ Sensitivity label = "Interne" (min)
+   │  └─ ✅ Release notes documentées
+   ├─ Approval : Équipe data review (2h max)
+   └─ Cadence : Weekly, bi-weekly, ou on-demand ?
 
-   3. Ajouter datasets
-      └─ Vérifier datasets accessibles
-      └─ RLS check : présente ?
+3. AJOUT POPULATION / USER
+   ├─ Demande : Via IT/DSI ticket
+   ├─ Validation : Équipe data + Manager
+   ├─ Implémentation : Add user to audience group AD
+   ├─ Timeline : 2-3 jours
+   └─ No individual access (group only)
 
-   4. Configurer audience
-      └─ Ajouter groupes AD définis en Phase 1
-      └─ Test : groupe peut-elle voir l'app ?
+4. AUDIT & MONITORING
+   ├─ Frequency : Monthly (ou weekly ?)
+   ├─ Check : Audience groups coherent ?
+   ├─ Alert : Individual user access detected ?
+   └─ Escalation : Équipe data
 
-   5. Ajouter sensitivity labels (si besoin)
-      └─ Exemple : "Finance Sensitive"
-
-   6. Publier (draft mode d'abord)
-      └─ Validation équipe avant public
+5. DECOMMISSION
+   ├─ Old workspaces : Archive, then delete (30-day retention)
+   ├─ Users : Migrate to app audience
+   └─ Timeline : 30 days grace period
 ```
 
-**Output** :
-```
-Apps Created :
-├─ App "Finance Reporting" : audiences {finance@company.com, equipe-data@company.com}
-├─ App "Commercial Ops" : audiences {commercial@company.com, equipe-data@company.com}
-├─ ...
-└─ Status : All published (draft) for testing
-```
+**Effort** : 1-2 jours (documentation)
 
 ---
 
-## TÂCHE 2.2 : Testing (RLS + Données)
-
-**Durée** : 3-5 jours  
-**À faire** :
+## 📊 OUTPUT PHASE 1
 
 ```
-✅ TEST MATRIX (pour 2-3 apps pilot) :
+✅ Design Document (4 pages)
+   ├─ Workspace → App mapping (table)
+   ├─ Audience groups (list)
+   ├─ RLS validation results
+   └─ Governance policy
 
-   Créer users test (1 par population représentative) :
-   ├─ User France/Finance
-   ├─ User Commercial
-   ├─ User Admin (équipe data)
-   └─ User Autre (no access)
-
-   Pour chaque user, pour chaque app :
-   ├─ Peut-il voir l'app ? (oui/non/esperé)
-   ├─ Données vues = données attendues ? (oui/non)
-   ├─ Cross-métier data visible ? (non = bon ✅)
-   └─ RLS fonctionne ? (oui/non)
-
-   Exemple test :
-   User="France/Finance", App="Finance"
-   ├─ Voit l'app ? OUI ✅
-   ├─ Voit juste données France+Finance ? OUI ✅
-   ├─ Voit données Commercial ? NON ✅
-   └─ RESULT : PASS ✅
-
-   User="Commercial", App="Finance"
-   ├─ Voit l'app ? NON ✅
-   ├─ RESULT : PASS ✅
-
-   User="No Access", App="Finance"
-   ├─ Voit l'app ? NON ✅
-   ├─ RESULT : PASS ✅
-```
-
-**Output** :
-```
-Testing Results :
-├─ 2-3 apps pilot : tested
-├─ 48 tests (3 users × 8 apps × 2 scenarios) : XX% PASS
-├─ Issues found : [list]
-├─ Fixes applied : [list]
-└─ Conclusion : "Ready for go-live" ✅
+✅ Sign-off
+   ├─ Équipe data : ✅
+   └─ Steering : ✅ Go for Phase 2
 ```
 
 ---
 
-## TÂCHE 2.3 : Pilot avec Small Audience
+# 💻 PHASE 2 : IMPLÉMENTATION (SEMAINE 3-4)
 
-**Durée** : 2-3 jours  
-**À faire** :
+**Objectif** : Créer apps, tester, pilot  
+**Effort** : 9-17 jours
+
+---
+
+## 2.1 CRÉER APPS
+
+### Timeline
 
 ```
-✅ PILOT PHASED ROLLOUT :
+Week 3 :
+├─ Day 1-2 : Créer apps (Power BI Desktop)
+│  ├─ Pour chaque app :
+│  │  ├─ Créer workspace (dans PBI Service)
+│  │  ├─ Publier datasets
+│  │  ├─ Publier reports
+│  │  └─ Configure app settings
+│  └─ Effort : 4-6 hours per app × 5-8 apps = 20-48 hours
+├─ Day 3 : Configurer audience groups
+│  ├─ Pour chaque app : Add audience group AD
+│  └─ Effort : 30 min per app × 5-8 apps = 3-4 hours
+└─ Day 4-5 : Internal testing
+   ├─ Équipe data : Vérifier apps, data, RLS
+   └─ Effort : 1-2 hours per app
 
-   Jour 1 : Pilot group 1 (small, tech-savvy)
-   ├─ Ajouter 10-20 users à app audience
-   ├─ Monitor : feedback ?
-   ├─ Issues : quoi ?
-   └─ Decision : expand ou fix ?
+Week 4 :
+├─ Day 1-2 : Pilot with small audience
+│  ├─ Select 2-3 apps (low-risk)
+│  ├─ Add 20-50 test users from audience
+│  ├─ Survey : "Is app working ? Any issues ?"
+│  ├─ Monitor usage logs
+│  └─ Effort : 3-5 hours per app
+├─ Day 3-4 : Feedback + adjustments
+│  ├─ Fix issues
+│  ├─ Optimize performance
+│  └─ Update documentation
+└─ Day 5 : Publish all apps
+   └─ Apps ready for production ✅
+```
 
-   Jour 2 : Feedback & fixes
-   ├─ Recueillir retours (survey, email)
-   ├─ Corriger issues critiques
-   ├─ Retest ?
+**Effort** : 9-17 jours
 
-   Jour 3 : Readiness for full go-live
-   ├─ "Pilot OK, prêt pour migration complète ?"
-   ├─ Checklist : RLS OK ? Apps OK ? Users happy ?
-   └─ Decision : GO for Phase 3
+---
+
+## 2.2 RLS TEST (QUICK)
+
+### Tâche : Valider RLS fonctionne dans apps
+
+```
+Pour chaque app :
+  ├─ Login as Tester from Population A
+  ├─ Vérifier : Sees app ? ✅
+  ├─ Vérifier : Sees ONLY their data in reports ? ✅
+  ├─ Login as Tester from Population B
+  ├─ Vérifier : Sees DIFFERENT app ? ✅
+  └─ Vérifier : No data cross-leakage ? ✅
+
+Test Matrix :
+  User Type | App Access | Data Visibility | RLS Check
+  ──────────────────────────────────────────────────────
+  Finance   | Finance ✅ | Finance only ✅ | ✅
+  Commercial| Comm ✅    | Comm only ✅    | ✅
+  RH        | RH ✅      | RH only ✅      | ✅
+```
+
+**Effort** : 1-2 hours (since RLS already validated in Phase 1)
+
+---
+
+## 📊 OUTPUT PHASE 2
+
+```
+✅ 5-8 Apps created & tested
+✅ Audiences configured
+✅ RLS validated working
+✅ Pilot feedback collected
+✅ All ready for production
+
+→ Go for Phase 3 (GO-LIVE)
 ```
 
 ---
 
-# PHASE 3 : GO-LIVE (Semaine 5)
+# 🚀 PHASE 3 : GO-LIVE (SEMAINE 5)
 
-**Durée** : 7-10 jours  
-**Objectif** : Migration complète + support  
-**Livrables** : Users on apps, workspaces archived
-
----
-
-## TÂCHE 3.1 : Formation Users
-
-**Durée** : 1-2 jours (création) + ongoing (sessions)  
-**À faire** :
-
-```
-✅ FORMATION MATERIEL :
-
-   1. 30-min Video "Apps 101"
-      ├─ Où trouver les apps ?
-      ├─ Comment chercher mon rapport ?
-      ├─ FAQ : bookmarks, favorites, sharing
-      └─ Support contact
-
-   2. 1-page Quick Guide
-      ├─ Screenshots : avant (workspaces) vs après (apps)
-      ├─ Step-by-step : "Trouver mon rapport"
-      ├─ Support contact
-
-   3. FAQ Document
-      ├─ "Où sont mes workspaces ?"
-         └─ Réponse : "Archivés, tout dans apps maintenant"
-      ├─ "Vais-je perdre mes données ?"
-         └─ Réponse : "Non, RLS conservée, mêmes données"
-      ├─ "Pourquoi ce changement ?"
-         └─ Réponse : "UX meilleure, navigation plus simple"
-      └─ "Qui appeler si problème ?"
-         └─ Réponse : "[support email/ticket]"
-```
+**Objectif** : Formation + Migration + Décommissionner  
+**Effort** : 7-10 jours
 
 ---
 
-## TÂCHE 3.2 : Migration Progressive
-
-**Durée** : 2-3 jours  
-**À faire** :
+## 3.1 FORMATION USERS
 
 ```
-✅ PHASED MIGRATION :
+Day 1 :
+├─ "Finding Your App" training (30 min, recorded)
+│  ├─ "Apps are in Power BI home page"
+│  ├─ "Click app name to access"
+│  ├─ "You see only your reports"
+│  └─ "Old workspaces are being retired"
+├─ "How to Get Help" (FAQ)
+│  └─ Support email / ticket system
+└─ Send to all users
 
-   Jour 1 (Jour J) :
-   ├─ Apps live (all audiences added)
-   ├─ Announcement email sent
-   ├─ Support team on standby
-   ├─ Monitor adoption
-
-   Jour 2-3 :
-   ├─ First 24h issues resolved
-   ├─ Users settle in
-   ├─ Tech issues triage + fix
-
-   Jour 4-7 (1 semaine post-live) :
-   ├─ Weekly check-ins
-   ├─ Adoption metrics collected
-   ├─ Outstanding issues resolved
-   ├─ Training follow-ups as needed
+Day 2 :
+├─ Office hours for questions (1 hour, optional)
+├─ Champions network briefing (30 min)
+└─ Email : "Apps are live, start using them"
 ```
+
+**Effort** : 1-2 jours
 
 ---
 
-## TÂCHE 3.3 : Décommissionner Old Workspaces
-
-**Durée** : 1-2 jours  
-**À faire** :
+## 3.2 MIGRATION USERS
 
 ```
-✅ CLEANUP :
+Week of Go-Live :
 
-   1. Archive old workspaces (30-day retention)
-      └─ Ne pas supprimer immédiatement (rollback possibility)
-      └─ Communiquer : "Workspaces archived, apps live"
+Day 1-2 :
+├─ Add all users to app audience groups (via AD)
+├─ Users automatically see apps in PBI home
+└─ Old workspaces still visible (parallel period)
 
-   2. Documenter mapping (old → new)
-      └─ "WS_Finance_1 + WS_Finance_2 = App Finance Reporting"
-      └─ Pour référence future + audit trail
+Day 3-4 :
+├─ Monitor adoption (users opening apps ?)
+├─ Support : Answer questions
+└─ Capture any issues
 
-   3. Update documentation
-      └─ Intranet : "Power BI workspaces fermés, utilisez apps"
-      └─ IT handbook : "Comment accéder à BI ?"
+Day 5 :
+├─ Review adoption metrics
+├─ Fix any issues
+└─ Plan decommission
 ```
+
+**Effort** : 3-5 jours
 
 ---
 
-## TÂCHE 3.4 : Post-Live Support (1 semaine)
-
-**Durée** : 3-5 jours  
-**À faire** :
+## 3.3 DÉCOMMISSIONNER WORKSPACES
 
 ```
-✅ SUPPORT :
+Week 2 after Go-Live :
 
-   Week 1 post-live :
-   ├─ Hotline actif (email/ticket)
-   ├─ Response time : <2h pour critiques
-   ├─ Common issues triage :
-   │  ├─ "Je vois pas mon app" → check audience
-   │  ├─ "Rapport ne charge pas" → RLS issue ?
-   │  ├─ "Données différentes" → data validation
-   │  └─ "Old workspace ne répond pas" → expected (archived)
-   ├─ Escalate to PBI team if needed
-   └─ Document solutions (FAQ update)
+├─ Archive old workspaces (rename → "[RETIRED]")
+├─ Remove user access from old workspaces
+├─ Keep 30-day retention (for emergency access)
+├─ Email : "Old workspaces will be deleted [DATE]"
 
-   After week 1 :
-   └─ Support transition to standard IT ticketing
+Week 5 after Go-Live :
+
+├─ Delete old workspaces (after 30-day retention)
+├─ Archive audit logs
+└─ Confirm all users on apps ✅
+```
+
+**Effort** : 2-3 jours
+
+---
+
+## 📊 OUTPUT PHASE 3
+
+```
+✅ All users migrated to apps
+✅ Adoption ≥ 70% (in first week)
+✅ Old workspaces decommissioned
+✅ Support tickets handled
+
+→ Migration Complete ✅
 ```
 
 ---
 
-# RÉSUMÉ EFFORT & TIMELINE
+# 📈 SUCCESS METRICS
 
 ```
-Phase 0 : AUDIT          → Semaine 1, 4-6 jours
-   ├─ Dérives (2-3j)
-   ├─ RLS check (1j)
-   ├─ Architecture decision (2-3j)
-   └─ Cleanup if needed (1-2j)
-
-Phase 1 : DESIGN         → Semaine 2, 6-11 jours
-   ├─ Audiences mapping (3-5j)
-   ├─ RLS validation (1-2j)
-   ├─ Governance policy (1-2j)
-   └─ Communication plan (1j)
-
-Phase 2 : IMPLÉMENTATION → Semaine 3-4, 9-17 jours
-   ├─ Create apps (4-6j)
-   ├─ Testing (3-5j)
-   └─ Pilot (2-3j)
-
-Phase 3 : GO-LIVE        → Semaine 5, 7-10 jours
-   ├─ Training (1-2j)
-   ├─ Migration (2-3j)
-   ├─ Decommission (1-2j)
-   └─ Support (3-5j)
-
-════════════════════════════════════════════════════
-TOTAL : 26-44 jours = 5-6 semaines = 1.5 mois ⚡
+Measure What ?
+─────────────────────────────────────────────────────────────
+Adoption       | % users opening app / week (Target : ≥70%)
+Satisfaction   | NPS score on "Finding app"
+Performance    | App load time (Target : <3 sec)
+RLS Validation | No data leakage incidents (Target : 0)
+Governance     | All apps using group audiences (Target : 100%)
+Support        | Tickets resolved in <1 day (Target : 95%)
 ```
 
 ---
 
-# RESSOURCES & EFFORT PAR RÔLE
+# 🎯 CRITICAL SUCCESS FACTORS
 
 ```
-Équipe Data (1 person)
-├─ Phase 0 : 4-6 jours (audit + decision)
-├─ Phase 1 : 4-8 jours (design)
-├─ Phase 2 : 6-12 jours (implementation)
-├─ Phase 3 : 4-6 jours (go-live + support)
-└─ TOTAL : 18-32 jours
-
-Admin/DSI (0.5 person)
-├─ Phase 0 : 2 jours (dérives check)
-├─ Phase 1 : 1 jour (governance)
-├─ Phase 2 : 1-2 jours (testing)
-├─ Phase 3 : 2-3 jours (migration support)
-└─ TOTAL : 6-8 jours
-
-Métier Validation (0.3 person)
-├─ Phase 0 : 1-2 jours (architecture validation)
-├─ Phase 1 : 1-2 jours (audiences review)
-├─ Phase 2 : 2-3 jours (pilot feedback)
-└─ TOTAL : 4-7 jours
-
-════════════════════════════════════════════════════
-TOTAL TEAM EFFORT : 28-47 jours
-Équipe Data dédication : 50% sur 6 semaines = FAISABLE ✅
+✅ RLS already in place (no implementation needed)
+✅ Clear app architecture (5-8 apps vs 15 workspaces)
+✅ Audience groups aligned with populations
+✅ App owners trained and motivated
+✅ Users informed and supported
+✅ Governance policy in place
+✅ Monitoring & audit baseline established
 ```
 
 ---
 
-# DÉCISION GATES
+# 📅 TIMELINE OVERVIEW
 
 ```
-GATE 1 (Fin Phase 0) : Audit OK ?
-├─ ✅ Baseline compris
-├─ ✅ Architecture décidée
-├─ ✅ Dérives identifiées/nettoyées
-└─ Decision : GO for Phase 1 ? → OUI/NON
+Week 1 : AUDIT BASELINE (4-6 jours)
+         └─ État actuel + architecture decision
 
-GATE 2 (Fin Phase 1) : Design OK ?
-├─ ✅ Audiences mapping validé
-├─ ✅ RLS check passed
-├─ ✅ Governance policy signéé
-└─ Decision : GO for Phase 2 ? → OUI/NON
+Week 2 : DESIGN (6-11 jours)
+         └─ Mapping + RLS validation + governance
 
-GATE 3 (Fin Phase 2) : Implementation OK ?
-├─ ✅ Apps created & tested
-├─ ✅ Pilot passed
-├─ ✅ Users ready
-└─ Decision : GO for Phase 3 ? → OUI/NON
+Week 3-4: IMPLÉMENTATION (9-17 jours)
+         ├─ Créer apps
+         ├─ Configure audiences
+         ├─ Test + pilot
+         └─ Ready for production
 
-GATE 4 (Fin Phase 3) : Migration OK ?
-├─ ✅ Users on apps
-├─ ✅ Workspaces archived
-├─ ✅ Support stable
-└─ Decision : Migration DONE ✅
+Week 5 : GO-LIVE (7-10 jours)
+         ├─ Formation users
+         ├─ Migrate to apps
+         └─ Décommissionner workspaces
+
+════════════════════════════════════════════
+TOTAL : 5-6 semaines = 26-44 jours ⚡⚡⚡
 ```
 
 ---
 
-# CHECKLIST PRÊT À DÉMARRER
+# ✅ NEXT STEPS
 
 ```
-✅ Phase 0 AUDIT (À faire maintenant)
-   □ Accès au fichier Excel workspaces/datasets/populations
-   □ Accès à Azure AD (vérifier groupes)
-   □ 1 person de l'équipe data dédié (4-6 jours)
-   □ 1 admin/DSI pour validation (2 jours)
-   □ Réunion architecture (2-3 jours)
-   □ Calendrier bloqué Semaine 1
-
-✅ Phase 1-3 (Préparer)
-   □ Équipe data disponible 50% sur Semaine 2-5
-   □ Support users / champions identifiés
-   □ Équipe métier pour validation (light)
-   □ PBI tenant access confirmé
-   □ Support contacts définis
-
-✅ Communication
-   □ Steering committee buy-in
-   □ Announcement préparé
-   □ FAQ template ready
-   □ Training video slot reserved
+1. Review this audit & roadmap
+2. Answer Phase 0 questions :
+   ├─ Individual users currently ? (count)
+   ├─ Unauthorized admins ? (count)
+   └─ Architecture preference ? (A/B/C)
+3. Confirm : Go for Phase 0 audit ?
+4. Schedule Phase 0 kickoff meeting
 ```
 
 ---
 
-# PROCHAINES ÉTAPES
-
-```
-✅ TOUT DE SUITE (cette semaine) :
-   1. Lire ce document
-   2. Confirmer : Migration YES/NO ?
-   3. Confirmer : Ressources dispo Phase 0 ?
-   4. Bloquer Semaine 1 pour audit
-
-✅ SEMAINE 1 (Phase 0) :
-   1. Tâche 0.1 : Audit dérives
-   2. Tâche 0.2 : RLS coverage check
-   3. Tâche 0.3 : Architecture decision
-   4. Tâche 0.4 : Cleanup (si needed)
-   5. Gate 1 : GO decision
-
-✅ SEMAINE 2 (Phase 1) :
-   1. Tâche 1.1 : Audiences mapping
-   2. Tâche 1.2 : RLS validation
-   3. Tâche 1.3 : Governance policy
-   4. Tâche 1.4 : Communication
-
-✅ SEMAINE 3-4 (Phase 2) :
-   1. Tâche 2.1 : Create apps
-   2. Tâche 2.2 : Testing
-   3. Tâche 2.3 : Pilot
-
-✅ SEMAINE 5 (Phase 3) :
-   1. Tâche 3.1 : Formation
-   2. Tâche 3.2 : Migration
-   3. Tâche 3.3 : Cleanup
-   4. Tâche 3.4 : Support
-```
-
----
-
-# QUESTIONS À RÉPONDRE MAINTENANT
-
-```
-❓ Architecture
-   → "1 app par métier (fusion)" ou "1 app par workspace (1:1)" ?
-   → Combien d'apps attendues ?
-
-❓ Ressources
-   → Équipe data : 50% disponible pendant 6 semaines ?
-   → Admin/DSI : 10-15% disponible ?
-   → Métier : 5-10% disponible ?
-
-❓ Dérives actuelles
-   → Nb de users individuels en workspace ?
-   → Admins non-équipe data ?
-   → Populations inactives ?
-
-❓ Priorités post-migration
-   → Audit continu requis (hebdo/mensuel) ?
-   → Gouvernance stricte ou flexible ?
-
-❓ Timeline
-   → Démarrer Phase 0 MAINTENANT (Semaine 1) ?
-   → Ou repousser ?
-```
-
----
-
-**Prêt à démarrer Phase 0 AUDIT ?** 🚀
+**Questions ? Let's go !** 🚀
