@@ -64,7 +64,7 @@ PROBLÈME 4 : Hiérarchie populations ≠ Workspaces
 
 ## 2️⃣ AVANTAGES MIGRATION VERS APPS
 
-### 2.1 Pour l'UX/Ergonomie (ENJEU PRIO)
+### 2.1 Pour l'UX/Ergonomie (ENJEU PRIO) ✅
 
 | Avantage | Impact |
 |----------|--------|
@@ -76,7 +76,7 @@ PROBLÈME 4 : Hiérarchie populations ≠ Workspaces
 | **Onboarding facile** | Nouveau user = lui assigner group AD → visible en app |
 | **Audience claires** | App audience = groupe métier (pas d'ambiguïté) |
 
-### 2.2 Pour la Gouvernance (BÉNÉFICE SECONDAIRE)
+### 2.2 Pour la Gouvernance (BÉNÉFICE SECONDAIRE) ✅
 
 | Avantage | Impact |
 |----------|--------|
@@ -90,7 +90,7 @@ PROBLÈME 4 : Hiérarchie populations ≠ Workspaces
 
 ## 3️⃣ INCONVÉNIENTS MIGRATION VERS APPS
 
-### 3.1 Effort & Complexité (COÛTS)
+### 3.1 Effort & Complexité (COÛTS) ⚠️
 
 | Inconvénient | Sévérité | Mitigation |
 |---|---|---|
@@ -102,7 +102,7 @@ PROBLÈME 4 : Hiérarchie populations ≠ Workspaces
 | **Changement user workflow** | 🟠 MOYEN | Users habitués aux workspaces |
 | **Power users frustration** | 🟠 MOYEN | Pas d'accès direct au dataset/workspace |
 
-### 3.2 Risques Opérationnels
+### 3.2 Risques Opérationnels 🚨
 
 | Risque | Probabilité | Mitigation |
 |---|---|---|
@@ -152,7 +152,7 @@ TÂCHE 4 : Créer apps + configurer audiences
 TOTAL EFFORT DROITS : 10-16 jours (2-3 semaines)
 ```
 
-### 4.2 Travail sur la RLS (CRITIQUE)
+### 4.2 Travail sur la RLS (CRITIQUE) 🔴
 
 ```
 TÂCHE 1 : Audit RLS actuelle
@@ -179,7 +179,7 @@ TÂCHE 3 : Harmoniser RLS avec populations hiérarchiques
 └─ Risk : User "France/Finance" voit "France" + "Finance" data (correct ?)
 
 TÂCHE 4 : Test RLS exhaustif (AVANT MIGRATION)
-├─ Créer test matrix : 
+├─ Créer test matrix :
 │  ├─ User de chaque population → test chaque app
 │  └─ Vérifier : voit ses données + pas données autres
 ├─ Exemple (20 users × 8 apps = 160 tests)
@@ -421,4 +421,3 @@ Si équipe data dédié 25% = 6-10 mois elapsed
    → Migration **justifiée** pour cet enjeu
    → Bénéfice utilisateur direct (navigation simplifiée)
    → ROI : meilleure adoption + moins de support
-
